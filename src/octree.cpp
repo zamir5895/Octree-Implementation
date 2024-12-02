@@ -4,12 +4,6 @@
 #include<unordered_map>
 
 
-
-
-
-
-
-
 template<typename T>
 Octree<T>::Octree(){
     point = new Point<T>();
@@ -64,12 +58,12 @@ void Octree<T>::insert(T x, T y, T z) {
         nodes[index] = new Octree<T>(x, y, z);
         return;
     } else {
-        // Si ya hay un punto en ese octante, lo reinsertamos
         Point<T>* existingPoint = nodes[index]->point;
-        nodes[index]->point = nullptr; // Vaciamos el punto anterior
-        nodes[index]->insert(existingPoint->x, existingPoint->y, existingPoint->z); // Reinserción del punto anterior
-        nodes[index]->insert(x, y, z); // Insertamos el nuevo punto
+        nodes[index]->point = nullptr; 
+        nodes[index]->insert(existingPoint->x, existingPoint->y, existingPoint->z); 
+        nodes[index]->insert(x, y, z); 
     }
+    colapse(); 
 }
 
 template<typename T>
@@ -174,3 +168,161 @@ Point<T> Octree<T>::find(T x, T y, T z) {
 }
 
 
+template<typename T>
+void Octree<T>::remove(T x, T y, T z) {
+    if (!isInside(x, y, z)) {
+        throw std::invalid_argument("Point is not inside the octree");
+    }
+
+    if (point != nullptr) {
+        delete point;
+        point = nullptr;
+        return;
+    }
+
+    int index = getOctant(x, y, z);
+    nodes[index]->remove(x, y, z);
+    colapse();  
+
+}
+
+template<typename T>
+bool Octree<T>::isLeaf() const {
+    for (int i = 0; i < 8; ++i) {
+        if (nodes[i] != nullptr) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename T>
+void Octree<T>::getPoints(std::vector<Point<T>>& points) const {
+    if (point != nullptr) {
+        points.push_back(*point);
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        if (nodes[i] != nullptr) {
+            nodes[i]->getPoints(points);
+        }
+    }
+}
+
+template<typename T>
+bool Octree<T>::isEmpty() const {
+    if (point != nullptr) {
+        return false;
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        if (nodes[i] != nullptr) {
+            if (!nodes[i]->isEmpty()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+template<typename T>
+int Octree<T>::countPoints() const {
+    int count = 0;
+    if (point != nullptr) {
+        count++;
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        if (nodes[i] != nullptr) {
+            count += nodes[i]->countPoints();
+        }
+    }
+    return count;
+}
+
+template<typename T>
+Point<T> Octree<T>::closestPoint(T x, T y, T z) const {
+    if (point != nullptr) {
+        T dist = distance(x, y, z, point->x, point->y, point->z);
+        Point<T> closest = *point;
+        
+        T minDist = dist;
+        
+        for (int i = 0; i < 8; ++i) {
+            if (nodes[i] != nullptr) {
+                Point<T> subNodeClosest = nodes[i]->closestPoint(x, y, z);
+                T subNodeDist = distance(x, y, z, subNodeClosest.x, subNodeClosest.y, subNodeClosest.z);
+                
+                if (subNodeDist < minDist) {
+                    closest = subNodeClosest;
+                    minDist = subNodeDist;
+                }
+            }
+        }
+        
+        return closest;
+    }
+
+    int index = getOctant(x, y, z);
+    return nodes[index]->closestPoint(x, y, z);
+}
+
+template<typename T>
+T Octree<T>::distance(T x1, T y1, T z1, T x2, T y2, T z2) const {
+    return std::sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2));
+}
+template<typename T>
+void Octree<T>::colapse() {
+    if (isLeaf()) {
+        return;
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        if (nodes[i] != nullptr) {
+            nodes[i]->colapse();
+        }
+    }
+
+    if (countPoints() == 0) {
+        for (int i = 0; i < 8; ++i) {
+            delete nodes[i]; 
+            nodes[i] = nullptr;  
+        }
+    }
+}
+
+
+template<typename T>
+void Octree<T>::combine(Octree<T>& octree) {
+    std::vector<Point<T>> points;
+    octree.getPoints(points);
+
+    for (const Point<T>& p : points) {
+        insert(p.x, p.y, p.z);
+    }
+}
+template<typename T>
+bool Octree<T>::contains(T x, T y, T z) const {
+    if (point != nullptr) {
+        return (point->x == x && point->y == y && point->z == z);
+    }
+
+    int index = getOctant(x, y, z);
+    if (nodes[index] != nullptr) {
+        return nodes[index]->contains(x, y, z);  
+    }
+
+    return false; 
+}
+
+template<typename T>
+void Octree<T>::combine(Octree<T>& octree) {
+    std::vector<Point<T>> points;
+    octree.getPoints(points);
+
+    for (const Point<T>& p : points) {
+        if (!contains(p.x, p.y, p.z)) {
+            insert(p.x, p.y, p.z);  
+        }
+    }
+}

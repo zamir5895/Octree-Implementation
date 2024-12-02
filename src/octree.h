@@ -57,7 +57,8 @@ class Octree {
         int getOctant(T x, T y, T z);
 
         bool hasChildren();
-
+        T distance(T x, T y, T z, T x2, T y2, T z2) const ;
+        bool contains(T x, T y, T z) const;
         ~Octree();
         
 };
