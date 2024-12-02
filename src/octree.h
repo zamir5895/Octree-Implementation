@@ -38,4 +38,4 @@ class Octree {
 
         void remove(T x, T y, T z);
         
-};
+}
