@@ -134,7 +134,7 @@ bool Octree<T>::isInside(T x, T y, T z) {
             || y > bottomRightBack->y
             || z < topLeftFront->z
             || z > bottomRightBack->z)
-            return 0;
+            return false;
 
     T xmid = (topleftfront->x + bottomrightback->x) / 2;
     T ymid = (topleftfront->y + bottomrightback->y) / 2;
@@ -151,11 +151,26 @@ bool Octree<T>::isInside(T x, T y, T z) {
         return false;
     }
     else{
-        if(x==)nodes[index]->point->x && y==nodes[index]->point->y && z==nodes[index]->point->z){
+        if(x == nodes[index]->point->x && y==nodes[index]->point->y && z==nodes[index]->point->z){
             return true;
         }
         
     }
     return false;
 }
+
+template<typename T>
+Point<T> Octree<T>::find(T x, T y, T z) {
+    if (!isInside(x, y, z)) {
+        throw std::invalid_argument("Point is not inside the octree");
+    }
+
+    if (point != nullptr) {
+        return *point;
+    }
+
+    int index = getOctant(x, y, z);
+    return nodes[index]->find(x, y, z);
+}
+
 
