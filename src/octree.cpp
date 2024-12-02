@@ -126,3 +126,36 @@ void Octree<T>::subdivide(T xmid, T ymid, T zmid) {
 }
 
 
+template<typename T>
+bool Octree<T>::isInside(T x, T y, T z) {
+    if (x < topLeftFront->x
+            || x > bottomRightBack->x
+            || y < topLeftFront->y
+            || y > bottomRightBack->y
+            || z < topLeftFront->z
+            || z > bottomRightBack->z)
+            return 0;
+
+    T xmid = (topleftfront->x + bottomrightback->x) / 2;
+    T ymid = (topleftfront->y + bottomrightback->y) / 2;
+    T zmid = (topleftfront->z + bottomrightback->z) / 2;
+
+
+    int index = getOctant(x, y, z);
+    
+
+    if(nodes[index]->point == nullptr){
+        return nodes[index]->isInside(x, y, z);
+    }
+    else if(nodes[index]->point->x == -1){
+        return false;
+    }
+    else{
+        if(x==)nodes[index]->point->x && y==nodes[index]->point->y && z==nodes[index]->point->z){
+            return true;
+        }
+        
+    }
+    return false;
+}
+
